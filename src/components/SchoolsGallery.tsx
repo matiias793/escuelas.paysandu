@@ -445,7 +445,7 @@ export default function SchoolsGallery() {
     detailRow &&
     createPortal(
       <div
-        className="fixed inset-0 z-[250] flex items-end justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-8 touch-manipulation sm:items-center sm:px-4 sm:py-8"
+        className="fixed inset-0 z-[250] flex items-center justify-center px-3 py-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] touch-manipulation sm:px-4 sm:py-8"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
         onClick={() => setDetailRow(null)}
         role="dialog"
@@ -453,7 +453,7 @@ export default function SchoolsGallery() {
         aria-labelledby="gallery-school-detail-title"
       >
         <div
-          className="relative flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border-[3px] border-[#E5A87A] bg-white shadow-xl"
+          className="relative flex max-h-[min(88vh,calc(100dvh-2rem))] w-full max-w-lg flex-col overflow-hidden rounded-2xl border-[3px] border-[#E5A87A] bg-white shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
           <button
