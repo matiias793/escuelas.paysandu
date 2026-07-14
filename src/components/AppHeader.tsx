@@ -15,16 +15,16 @@ export default function AppHeader() {
 
   if (onLogin) return null;
 
-  // Visitante: solo acceso discreto al login
+  // Visitante: acceso discreto al login, arriba a la derecha
   if (loading || !user || !canEdit) {
     if (loading) return null;
     if (user && !canEdit) {
       return (
-        <header className="pointer-events-none fixed right-0 top-0 z-40 p-3 sm:p-4">
+        <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-end px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5">
           <button
             type="button"
             onClick={() => void signOut()}
-            className="pointer-events-auto rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-400 transition-colors hover:bg-white/80 hover:text-neutral-600"
+            className="pointer-events-auto rounded-lg bg-white/70 px-2.5 py-1.5 text-xs font-medium text-neutral-500 backdrop-blur-sm transition-colors hover:bg-white hover:text-neutral-700"
           >
             Salir
           </button>
@@ -32,10 +32,10 @@ export default function AppHeader() {
       );
     }
     return (
-      <header className="pointer-events-none fixed right-0 top-0 z-40 p-3 sm:p-4">
+      <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-end px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5">
         <Link
           href="/login"
-          className="pointer-events-auto rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-400 transition-colors hover:bg-white/80 hover:text-primary-dark"
+          className="pointer-events-auto rounded-lg bg-white/70 px-2.5 py-1.5 text-xs font-medium text-neutral-500 backdrop-blur-sm transition-colors hover:bg-white hover:text-primary-dark"
         >
           Iniciar sesión
         </Link>

@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import {
   FaCity,
   FaExternalLinkAlt,
-  FaInfoCircle,
   FaSearch,
   FaSearchPlus,
   FaTh,
@@ -21,6 +20,7 @@ import {
 import {
   PAYSANDU_SCHOOL_COMENSAL_SECUNDARIA_LABELS,
   PAYSANDU_SCHOOL_DEPARTMENT,
+  buildSchoolDetailSentences,
   labelArea,
   labelServicio,
   labelTipo,
@@ -78,18 +78,17 @@ function SchoolGalleryCard({
   row,
   density,
   onZoom,
-  onOpenInfo,
+  onOpenDetail,
 }: {
   row: PaysanduSchoolRow;
   density: GridView;
   onZoom: (row: PaysanduSchoolRow) => void;
-  onOpenInfo: (row: PaysanduSchoolRow) => void;
+  onOpenDetail: (row: PaysanduSchoolRow) => void;
 }) {
   const photoUrl = getPaysanduFacadePublicUrl(row.facade_photo_path);
   const mapsUrl = row.google_maps_url?.trim() || '';
   const mapsOk = mapsUrl && isValidGoogleMapsUrl(mapsUrl);
   const secundaria = row.comensales_secundaria ?? [];
-  const hasInfo = Boolean(row.public_info?.trim());
 
   const chips: string[] = [];
   if (row.area) chips.push(labelArea(row.area));
@@ -105,7 +104,13 @@ function SchoolGalleryCard({
 
   if (density === 'dense') {
     return (
-      <article className="overflow-hidden rounded-lg border border-surface-border bg-white shadow-sm ring-1 ring-surface-ring">
+      <article className="relative overflow-hidden rounded-lg border border-surface-border bg-white shadow-sm ring-1 ring-surface-ring transition-shadow hover:shadow-md">
+        <button
+          type="button"
+          className="absolute inset-0 z-[1] cursor-pointer"
+          onClick={() => onOpenDetail(row)}
+          aria-label={`Ver detalle escuela ${row.school_number}`}
+        />
         <div className="relative aspect-square bg-neutral-100">
           {photoUrl ? (
             <>
@@ -113,13 +118,15 @@ function SchoolGalleryCard({
               <img
                 src={photoUrl}
                 alt={`Fachada escuela ${row.school_number}`}
-                className="h-full w-full cursor-zoom-in object-cover"
-                onClick={() => onZoom(row)}
+                className="pointer-events-none h-full w-full object-cover"
               />
               <button
                 type="button"
-                onClick={() => onZoom(row)}
-                className="absolute right-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white bg-primary-dark text-white shadow"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onZoom(row);
+                }}
+                className="absolute right-1 top-1 z-[2] flex h-7 w-7 items-center justify-center rounded-full border border-white bg-primary-dark text-white shadow"
                 title="Ampliar imagen"
                 aria-label={`Ampliar foto escuela ${row.school_number}`}
               >
@@ -127,15 +134,11 @@ function SchoolGalleryCard({
               </button>
             </>
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-neutral-300">
+            <div className="pointer-events-none flex h-full w-full items-center justify-center text-neutral-300">
               <span className="text-base font-bold tabular-nums">{row.school_number}</span>
             </div>
           )}
-          <div
-            className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/40 to-transparent px-1.5 pb-1.5 pt-6 ${
-              mapsOk || hasInfo ? 'pr-8' : ''
-            }`}
-          >
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/40 to-transparent px-1.5 pb-1.5 pt-6">
             <p className="text-[11px] font-bold leading-tight text-white">
               Nº {row.school_number}
             </p>
@@ -145,34 +148,19 @@ function SchoolGalleryCard({
               </p>
             ) : null}
           </div>
-          {(mapsOk || hasInfo) && (
-            <div className="absolute bottom-1.5 right-1 z-10 flex flex-col gap-0.5">
-              {hasInfo ? (
-                <button
-                  type="button"
-                  onClick={() => onOpenInfo(row)}
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-primary-dark shadow"
-                  title="Ver información"
-                  aria-label={`Info escuela ${row.school_number}`}
-                >
-                  <FaInfoCircle className="text-[10px]" aria-hidden />
-                </button>
-              ) : null}
-              {mapsOk ? (
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-accent-hover shadow"
-                  title="Ver en Google Maps"
-                  aria-label={`Maps escuela ${row.school_number}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <FaExternalLinkAlt size={8} aria-hidden />
-                </a>
-              ) : null}
-            </div>
-          )}
+          {mapsOk ? (
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-1.5 right-1 z-[2] flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-accent-hover shadow"
+              title="Ver en Google Maps"
+              aria-label={`Maps escuela ${row.school_number}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <FaExternalLinkAlt size={8} aria-hidden />
+            </a>
+          ) : null}
         </div>
       </article>
     );
@@ -183,10 +171,16 @@ function SchoolGalleryCard({
 
   return (
     <article
-      className={`overflow-hidden border border-surface-border bg-white shadow-sm ring-1 ring-surface-ring ${
+      className={`relative overflow-hidden border border-surface-border bg-white shadow-sm ring-1 ring-surface-ring transition-shadow hover:shadow-md ${
         isCompact ? 'rounded-xl' : 'rounded-2xl'
       }`}
     >
+      <button
+        type="button"
+        className="absolute inset-0 z-[1] cursor-pointer"
+        onClick={() => onOpenDetail(row)}
+        aria-label={`Ver detalle escuela ${row.school_number}`}
+      />
       <div className={`relative bg-neutral-100 ${isCompact ? 'aspect-[5/4]' : 'aspect-[4/3]'}`}>
         {photoUrl ? (
           <>
@@ -194,14 +188,16 @@ function SchoolGalleryCard({
             <img
               src={photoUrl}
               alt={`Fachada escuela ${row.school_number}`}
-              className="h-full w-full cursor-zoom-in object-cover"
-              onClick={() => onZoom(row)}
+              className="pointer-events-none h-full w-full object-cover"
             />
             <button
               type="button"
-              onClick={() => onZoom(row)}
-              className={`absolute z-10 flex items-center justify-center rounded-full border-2 border-white bg-primary-dark text-white shadow-md ${
-                isCompact ? 'right-1 top-1 h-7 w-7' : 'right-2 top-2 h-9 w-9'
+              onClick={(e) => {
+                e.stopPropagation();
+                onZoom(row);
+              }}
+              className={`absolute z-[2] flex items-center justify-center rounded-full border-2 border-white bg-primary-dark text-white shadow-md ${
+                isCompact ? 'right-1 top-1 h-8 w-8' : 'right-2 top-2 h-9 w-9'
               }`}
               title="Ampliar imagen"
               aria-label={`Ampliar foto escuela ${row.school_number}`}
@@ -211,7 +207,7 @@ function SchoolGalleryCard({
           </>
         ) : (
           <div
-            className={`flex h-full w-full flex-col items-center justify-center px-2 text-center text-neutral-400 ${
+            className={`pointer-events-none flex h-full w-full flex-col items-center justify-center px-2 text-center text-neutral-400 ${
               isCompact ? 'gap-0.5 text-[10px]' : 'gap-1 text-sm'
             }`}
           >
@@ -227,7 +223,9 @@ function SchoolGalleryCard({
         )}
       </div>
 
-      <div className={isCompact ? 'space-y-1.5 p-2' : 'space-y-2.5 p-3.5'}>
+      <div
+        className={`pointer-events-none relative z-0 ${isCompact ? 'space-y-1.5 p-2' : 'space-y-2.5 p-3.5'}`}
+      >
         <div>
           <h2
             className={`font-bold text-neutral-900 ${isCompact ? 'text-xs leading-tight' : 'text-base'}`}
@@ -270,34 +268,32 @@ function SchoolGalleryCard({
         ) : null}
 
         {mapsOk ? (
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center font-semibold text-accent-hover hover:underline ${
+          <p
+            className={`invisible inline-flex items-center font-semibold ${
               isCompact ? 'gap-1 text-[10px]' : 'gap-1.5 text-sm'
             }`}
+            aria-hidden
           >
-            <FaExternalLinkAlt size={isCompact ? 9 : 11} aria-hidden />
+            <FaExternalLinkAlt size={isCompact ? 9 : 11} />
             {isCompact ? 'Maps' : 'Ver en Google Maps'}
-          </a>
-        ) : null}
-
-        {hasInfo ? (
-          <button
-            type="button"
-            onClick={() => onOpenInfo(row)}
-            className={`inline-flex w-full items-center justify-center border border-primary/30 bg-primary font-semibold text-white hover:bg-primary-hover ${
-              isCompact
-                ? 'gap-1 rounded-lg px-2 py-1.5 text-[10px]'
-                : 'gap-2 rounded-xl px-3 py-2.5 text-sm'
-            }`}
-          >
-            <FaInfoCircle className={isCompact ? 'text-[10px]' : undefined} aria-hidden />
-            {isCompact ? 'Info' : 'Ver información de escuela'}
-          </button>
+          </p>
         ) : null}
       </div>
+
+      {mapsOk ? (
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className={`absolute z-[2] inline-flex items-center font-semibold text-accent-hover hover:underline ${
+            isCompact ? 'bottom-2 left-2 gap-1 text-[10px]' : 'bottom-3.5 left-3.5 gap-1.5 text-sm'
+          }`}
+        >
+          <FaExternalLinkAlt size={isCompact ? 9 : 11} aria-hidden />
+          {isCompact ? 'Maps' : 'Ver en Google Maps'}
+        </a>
+      ) : null}
     </article>
   );
 }
@@ -319,10 +315,10 @@ export default function SchoolsGallery() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [areaFilter, setAreaFilter] = useState<PaysanduSchoolArea | null>(null);
-  const [onlyWithPhoto, setOnlyWithPhoto] = useState(false);
+  const [onlyWithPhoto, setOnlyWithPhoto] = useState(true);
   const [gridView, setGridView] = useState<GridView>('comfortable');
   const [zoomRow, setZoomRow] = useState<PaysanduSchoolRow | null>(null);
-  const [infoRow, setInfoRow] = useState<PaysanduSchoolRow | null>(null);
+  const [detailRow, setDetailRow] = useState<PaysanduSchoolRow | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -365,11 +361,11 @@ export default function SchoolsGallery() {
   }, [load]);
 
   useEffect(() => {
-    if (!zoomRow && !infoRow) return;
+    if (!zoomRow && !detailRow) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setZoomRow(null);
-        setInfoRow(null);
+        setDetailRow(null);
       }
     };
     const prevOverflow = document.body.style.overflow;
@@ -379,7 +375,7 @@ export default function SchoolsGallery() {
       document.body.style.overflow = prevOverflow;
       document.removeEventListener('keydown', onKey);
     };
-  }, [zoomRow, infoRow]);
+  }, [zoomRow, detailRow]);
 
   const filtered = useMemo(() => {
     return rows.filter((row) => {
@@ -437,43 +433,104 @@ export default function SchoolsGallery() {
       document.body,
     );
 
-  const infoModal =
+  const detailPhotoUrl = detailRow
+    ? getPaysanduFacadePublicUrl(detailRow.facade_photo_path)
+    : null;
+  const detailMapsUrl = detailRow?.google_maps_url?.trim() || '';
+  const detailMapsOk = detailMapsUrl && isValidGoogleMapsUrl(detailMapsUrl);
+  const detailSentences = detailRow ? buildSchoolDetailSentences(detailRow) : [];
+
+  const detailModal =
     mounted &&
-    infoRow &&
-    infoRow.public_info?.trim() &&
+    detailRow &&
     createPortal(
       <div
         className="fixed inset-0 z-[250] flex items-end justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-8 touch-manipulation sm:items-center sm:px-4 sm:py-8"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
-        onClick={() => setInfoRow(null)}
+        onClick={() => setDetailRow(null)}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="gallery-school-info-title"
+        aria-labelledby="gallery-school-detail-title"
       >
         <div
-          className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-xl"
+          className="relative flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
-            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
-            onClick={() => setInfoRow(null)}
+            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-neutral-400 shadow-sm transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+            onClick={() => setDetailRow(null)}
             aria-label="Cerrar"
           >
             <FaTimes />
           </button>
+
+          {detailPhotoUrl ? (
+            <div className="relative aspect-[16/10] shrink-0 bg-neutral-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={detailPhotoUrl}
+                alt={`Fachada escuela ${detailRow.school_number}`}
+                className="h-full w-full object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setDetailRow(null);
+                  setZoomRow(detailRow);
+                }}
+                className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-primary-dark text-white shadow-md"
+                aria-label="Ampliar foto"
+              >
+                <FaSearchPlus aria-hidden />
+              </button>
+            </div>
+          ) : null}
+
           <div className="border-b border-surface-border px-5 pb-3 pt-5 pr-12">
-            <h2 id="gallery-school-info-title" className="text-lg font-bold text-neutral-800">
-              Escuela Nº {infoRow.school_number}
+            <h2 id="gallery-school-detail-title" className="text-lg font-bold text-neutral-800">
+              Escuela Nº {detailRow.school_number}
             </h2>
-            {infoRow.nombre?.trim() ? (
-              <p className="mt-0.5 text-sm text-neutral-500">{infoRow.nombre.trim()}</p>
+            {detailRow.nombre?.trim() ? (
+              <p className="mt-0.5 text-sm text-neutral-500">{detailRow.nombre.trim()}</p>
             ) : null}
           </div>
-          <div className="overflow-y-auto px-5 py-4">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">
-              {infoRow.public_info.trim()}
-            </p>
+
+          <div className="space-y-3 overflow-y-auto px-5 py-4">
+            {detailSentences.length > 0 ? (
+              <ul className="space-y-2.5">
+                {detailSentences.map((sentence) => (
+                  <li key={sentence} className="text-sm leading-relaxed text-neutral-700">
+                    {sentence}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-neutral-500">Sin datos adicionales cargados.</p>
+            )}
+
+            {detailRow.public_info?.trim() ? (
+              <div className="rounded-xl border border-primary/15 bg-primary/5 px-3.5 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary-dark">
+                  Información de la escuela
+                </p>
+                <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">
+                  {detailRow.public_info.trim()}
+                </p>
+              </div>
+            ) : null}
+
+            {detailMapsOk ? (
+              <a
+                href={detailMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-accent-hover hover:underline"
+              >
+                <FaExternalLinkAlt size={12} aria-hidden />
+                Ver en Google Maps
+              </a>
+            ) : null}
           </div>
         </div>
       </div>,
@@ -481,8 +538,8 @@ export default function SchoolsGallery() {
     );
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-2 py-6 sm:px-4 sm:py-8">
-      <div className="mb-5 text-center sm:mb-6">
+    <div className="mx-auto w-full max-w-6xl px-2 pb-6 pt-14 sm:px-4 sm:pb-8 sm:pt-12">
+      <div className="mb-5 pr-20 text-center sm:mb-6 sm:pr-28">
         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary sm:tracking-[0.2em]">
           Departamento de {PAYSANDU_SCHOOL_DEPARTMENT}
         </p>
@@ -621,7 +678,7 @@ export default function SchoolsGallery() {
                 row={row}
                 density={gridView}
                 onZoom={setZoomRow}
-                onOpenInfo={setInfoRow}
+                onOpenDetail={setDetailRow}
               />
             ))}
           </div>
@@ -629,7 +686,7 @@ export default function SchoolsGallery() {
       )}
 
       {zoomModal}
-      {infoModal}
+      {detailModal}
     </div>
   );
 }

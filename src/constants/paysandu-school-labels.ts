@@ -113,6 +113,55 @@ export function labelComensalesSecundaria(
   return PAYSANDU_SCHOOL_COMENSAL_SECUNDARIA_LABELS[single[0]];
 }
 
+/** Frases legibles para la ficha pública de una escuela. */
+export function buildSchoolDetailSentences(row: {
+  area: PaysanduSchoolArea | null;
+  tipo: PaysanduSchoolTipo | null;
+  servicio_alimentacion: PaysanduSchoolServicio | null;
+  recibe_partida_agua_mineral: boolean;
+  comparte_comedor_con: number | null;
+  comedor_administrado_por?: number | null;
+  comensales_secundaria: PaysanduSchoolComensalSecundaria[] | null | undefined;
+}): string[] {
+  const sentences: string[] = [];
+
+  if (row.area && row.tipo) {
+    sentences.push(
+      `Es una escuela ${labelArea(row.area).toLowerCase()} de tipo ${labelTipo(row.tipo)}.`,
+    );
+  } else if (row.area) {
+    sentences.push(`Es una escuela ${labelArea(row.area).toLowerCase()}.`);
+  } else if (row.tipo) {
+    sentences.push(`Es una escuela de tipo ${labelTipo(row.tipo)}.`);
+  }
+
+  if (row.servicio_alimentacion) {
+    const servicio = labelServicio(row.servicio_alimentacion);
+    const detalle =
+      servicio.charAt(0).toLowerCase() + servicio.slice(1);
+    sentences.push(`Esta escuela brinda servicio de ${detalle}.`);
+  }
+
+  if (row.recibe_partida_agua_mineral) {
+    sentences.push('Cuentan con partida de agua mineral.');
+  }
+
+  const secundaria = normalizeComensalesSecundaria(row.comensales_secundaria);
+  for (const key of secundaria) {
+    sentences.push(`Cuentan con ${PAYSANDU_SCHOOL_COMENSAL_SECUNDARIA_LABELS[key]}.`);
+  }
+
+  if (row.comparte_comedor_con) {
+    let sentence = `Comparte comedor con la escuela Nº ${row.comparte_comedor_con}.`;
+    if (row.comedor_administrado_por) {
+      sentence += ` El comedor lo administra la escuela Nº ${row.comedor_administrado_por}.`;
+    }
+    sentences.push(sentence);
+  }
+
+  return sentences;
+}
+
 export function normalizeComensalesSecundaria(
   value: unknown,
 ): PaysanduSchoolComensalSecundaria[] {
