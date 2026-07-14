@@ -39,8 +39,29 @@ function schoolMatchesNumber(row: PaysanduSchoolRow, rawQuery: string): boolean 
 }
 
 const GRID_VIEW_STORAGE_KEY = 'paysandu-gallery-grid-view';
+const SCHOOLS_CACHE_STORAGE_KEY = 'paysandu-gallery-schools-cache-v1';
 
 type GridView = 'comfortable' | 'compact' | 'dense';
+
+function readCachedSchools(): PaysanduSchoolRow[] | null {
+  try {
+    const raw = localStorage.getItem(SCHOOLS_CACHE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    return parsed as PaysanduSchoolRow[];
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedSchools(rows: PaysanduSchoolRow[]): void {
+  try {
+    localStorage.setItem(SCHOOLS_CACHE_STORAGE_KEY, JSON.stringify(rows));
+  } catch {
+    /* quota / private mode */
+  }
+}
 
 function DenseGridIcon({ className }: { className?: string }) {
   return (
@@ -330,6 +351,7 @@ export default function SchoolsGallery() {
   const [rows, setRows] = useState<PaysanduSchoolRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [offlineCached, setOfflineCached] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [areaFilter, setAreaFilter] = useState<PaysanduSchoolArea | null>(null);
   const [onlyWithPhoto, setOnlyWithPhoto] = useState(true);
@@ -362,12 +384,37 @@ export default function SchoolsGallery() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setOfflineCached(false);
+
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if (offline) {
+      const cached = readCachedSchools();
+      if (cached && cached.length > 0) {
+        setRows(cached);
+        setOfflineCached(true);
+        setLoading(false);
+        return;
+      }
+      setRows([]);
+      setError('Sin conexión y no hay escuelas guardadas en este dispositivo.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await fetchPublicPaysanduSchools();
       setRows(data);
+      writeCachedSchools(data);
     } catch (e) {
-      setRows([]);
-      setError(e instanceof Error ? e.message : 'No se pudo cargar la galería.');
+      const cached = readCachedSchools();
+      if (cached && cached.length > 0) {
+        setRows(cached);
+        setOfflineCached(true);
+        setError(null);
+      } else {
+        setRows([]);
+        setError(e instanceof Error ? e.message : 'No se pudo cargar la galería.');
+      }
     } finally {
       setLoading(false);
     }
@@ -376,6 +423,22 @@ export default function SchoolsGallery() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const onOnline = () => {
+      setOfflineCached(false);
+      void load();
+    };
+    const onOffline = () => {
+      if (rows.length > 0) setOfflineCached(true);
+    };
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, [load, rows.length]);
 
   useEffect(() => {
     if (!zoomRow && !detailRow) return;
@@ -670,6 +733,12 @@ export default function SchoolsGallery() {
           </div>
         </div>
       </div>
+
+      {offlineCached ? (
+        <p className="mb-3 rounded-xl border border-accent/40 bg-accent-soft px-3 py-2 text-center text-xs font-medium text-accent-hover">
+          Sin conexión · escuelas ya cargadas · fotos solo si las viste antes
+        </p>
+      ) : null}
 
       {error ? (
         <p className="mb-4 rounded-xl border border-flag-red/25 bg-flag-red/10 px-3 py-2 text-sm text-flag-red">

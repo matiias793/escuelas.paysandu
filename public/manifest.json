@@ -2,10 +2,13 @@
   "name": "Escuelas de Paysandú",
   "short_name": "Escuelas Paysandú",
   "description": "Galería de escuelas públicas del departamento de Paysandú.",
+  "id": "/",
+  "scope": "/",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
   "theme_color": "#5B59B5",
   "background_color": "#F5F4FB",
-  "display": "standalone",
-  "start_url": "/",
   "lang": "es-UY",
   "icons": [
     {
@@ -19,6 +22,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
