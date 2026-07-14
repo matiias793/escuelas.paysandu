@@ -31,6 +31,7 @@ import {
 import PaysanduSchoolCommentsModal from '@/components/admin/PaysanduSchoolCommentsModal';
 import PaysanduSchoolPublicInfoModal from '@/components/admin/PaysanduSchoolPublicInfoModal';
 import PublicPaysanduSchoolsGalleryLinkSection from '@/components/admin/PublicPaysanduSchoolsGalleryLinkSection';
+import FacadeImage from '@/components/FacadeImage';
 import {
   adminCreatePaysanduSchool,
   adminDeletePaysanduSchool,
@@ -308,14 +309,16 @@ function SchoolFacadeMapsFields({
           Tocá el fondo oscuro para cerrar
         </p>
         <div
-          className="relative mx-auto flex max-h-[min(70vh,560px)] w-full max-w-3xl items-center justify-center overflow-hidden rounded-xl bg-neutral-950"
+          className="relative mx-auto h-[min(70vh,560px)] w-full max-w-3xl overflow-hidden rounded-xl bg-neutral-950"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <FacadeImage
             src={photoUrl}
             alt={`Fachada escuela ${row.school_number}`}
-            className="max-h-[min(70vh,560px)] w-auto max-w-full object-contain"
+            sizes="(max-width: 768px) 100vw, 768px"
+            objectFit="contain"
+            priority
+            quality={82}
           />
         </div>
         <p className="mt-3 text-sm font-semibold text-white">
@@ -335,11 +338,11 @@ function SchoolFacadeMapsFields({
       >
         {photoUrl ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <FacadeImage
               src={photoUrl}
               alt={`Fachada escuela ${row.school_number}`}
-              className="h-full w-full cursor-zoom-in object-cover"
+              sizes={variant === 'photo' ? '(max-width: 640px) 100vw, 280px' : '144px'}
+              className="cursor-zoom-in"
               onClick={() => setIsZoomed(true)}
             />
             <button

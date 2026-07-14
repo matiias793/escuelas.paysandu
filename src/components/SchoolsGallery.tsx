@@ -28,6 +28,7 @@ import {
 import { getPaysanduFacadePublicUrl, isValidGoogleMapsUrl } from '@/services/paysandu-school-media';
 import { fetchPublicPaysanduSchools } from '@/services/paysandu-schools';
 import type { PaysanduSchoolArea, PaysanduSchoolRow } from '@/types/paysandu-school';
+import FacadeImage from '@/components/FacadeImage';
 
 function schoolMatchesNumber(row: PaysanduSchoolRow, rawQuery: string): boolean {
   const query = rawQuery.trim();
@@ -74,14 +75,27 @@ const GRID_VIEW_OPTIONS: {
   { id: 'dense', label: 'Mini', Icon: DenseGridIcon },
 ];
 
+function gallerySizesForView(density: GridView): string {
+  switch (density) {
+    case 'dense':
+      return '(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw';
+    case 'compact':
+      return '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw';
+    default:
+      return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
+  }
+}
+
 function SchoolGalleryCard({
   row,
   density,
+  priority = false,
   onZoom,
   onOpenDetail,
 }: {
   row: PaysanduSchoolRow;
   density: GridView;
+  priority?: boolean;
   onZoom: (row: PaysanduSchoolRow) => void;
   onOpenDetail: (row: PaysanduSchoolRow) => void;
 }) {
@@ -89,6 +103,7 @@ function SchoolGalleryCard({
   const mapsUrl = row.google_maps_url?.trim() || '';
   const mapsOk = mapsUrl && isValidGoogleMapsUrl(mapsUrl);
   const secundaria = row.comensales_secundaria ?? [];
+  const photoSizes = gallerySizesForView(density);
 
   const chips: string[] = [];
   if (row.area) chips.push(labelArea(row.area));
@@ -114,11 +129,12 @@ function SchoolGalleryCard({
         <div className="relative aspect-square bg-neutral-100">
           {photoUrl ? (
             <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <FacadeImage
                 src={photoUrl}
                 alt={`Fachada escuela ${row.school_number}`}
-                className="pointer-events-none h-full w-full object-cover"
+                sizes={photoSizes}
+                priority={priority}
+                className="pointer-events-none"
               />
               <button
                 type="button"
@@ -184,11 +200,12 @@ function SchoolGalleryCard({
       <div className={`relative bg-neutral-100 ${isCompact ? 'aspect-[5/4]' : 'aspect-[4/3]'}`}>
         {photoUrl ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <FacadeImage
               src={photoUrl}
               alt={`Fachada escuela ${row.school_number}`}
-              className="pointer-events-none h-full w-full object-cover"
+              sizes={photoSizes}
+              priority={priority}
+              className="pointer-events-none"
             />
             <button
               type="button"
@@ -415,14 +432,16 @@ export default function SchoolsGallery() {
           Tocá el fondo oscuro para cerrar
         </p>
         <div
-          className="relative mx-auto flex max-h-[min(70vh,560px)] w-full max-w-3xl items-center justify-center overflow-hidden rounded-xl bg-neutral-950"
+          className="relative mx-auto h-[min(70vh,560px)] w-full max-w-3xl overflow-hidden rounded-xl bg-neutral-950"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <FacadeImage
             src={zoomUrl}
             alt={`Fachada escuela ${zoomRow.school_number}`}
-            className="max-h-[min(70vh,560px)] w-auto max-w-full object-contain"
+            sizes="(max-width: 768px) 100vw, 768px"
+            objectFit="contain"
+            priority
+            quality={82}
           />
         </div>
         <p className="mt-3 text-sm font-semibold text-white">
@@ -466,12 +485,13 @@ export default function SchoolsGallery() {
           </button>
 
           {detailPhotoUrl ? (
-            <div className="relative max-h-[36vh] shrink-0 bg-neutral-100 sm:max-h-[40vh]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="relative h-[min(36vh,240px)] w-full shrink-0 overflow-hidden bg-neutral-100 sm:h-[min(40vh,280px)]">
+              <FacadeImage
                 src={detailPhotoUrl}
                 alt={`Fachada escuela ${detailRow.school_number}`}
-                className="h-full max-h-[36vh] w-full object-cover sm:max-h-[40vh]"
+                sizes="(max-width: 640px) 100vw, 512px"
+                priority
+                quality={78}
               />
               <button
                 type="button"
@@ -672,11 +692,12 @@ export default function SchoolsGallery() {
             {searchQuery.trim() ? ` · Nº ${searchQuery.trim()}` : ''}.
           </p>
           <div className={gridClassForView(gridView)}>
-            {filtered.map((row) => (
+            {filtered.map((row, index) => (
               <SchoolGalleryCard
                 key={row.school_number}
                 row={row}
                 density={gridView}
+                priority={index < 2}
                 onZoom={setZoomRow}
                 onOpenDetail={setDetailRow}
               />

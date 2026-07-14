@@ -121,7 +121,7 @@ export async function uploadPaysanduSchoolFacade(
       .upload(path, compressed, {
         upsert: false,
         contentType: 'image/jpeg',
-        cacheControl: '60',
+        cacheControl: '31536000',
       });
 
     if (uploadError) {
