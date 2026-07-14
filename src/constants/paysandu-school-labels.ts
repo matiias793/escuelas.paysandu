@@ -1,11 +1,14 @@
 import type {
   PaysanduSchoolArea,
   PaysanduSchoolComensalSecundaria,
+  PaysanduSchoolExportFilter,
   PaysanduSchoolServicio,
   PaysanduSchoolTipo,
 } from '@/types/paysandu-school';
 
 export const PAYSANDU_SCHOOL_DEPARTMENT = 'Paysandú';
+
+export const PAYSANDU_SCHOOL_MAX_NUMBER = 117;
 
 export const PAYSANDU_SCHOOL_AREA_LABELS: Record<PaysanduSchoolArea, string> = {
   urbana: 'Urbana',
@@ -31,6 +34,17 @@ export const PAYSANDU_SCHOOL_SERVICIO_LABELS: Record<PaysanduSchoolServicio, str
   solo_almuerzo: 'Solo almuerzo',
 };
 
+/** Texto compacto para el listado admin (PDF y filtros usan las etiquetas completas). */
+export const PAYSANDU_SCHOOL_SERVICIO_ADMIN_LABELS: Record<PaysanduSchoolServicio, string> = {
+  solo_copa_leche: 'Solo copa leche',
+  doble_copa_leche: 'Doble copa leche',
+  copa_y_almuerzo: 'Copa de leche y almuerzo',
+  doble_copa_y_almuerzo: 'Doble copa de leche y almuerzo',
+  internado_4_tiempos: 'Doble copa de leche, almuerzo y cena',
+  solo_almuerzo: 'Solo almuerzo',
+};
+
+/** CBR, Liceo, UTU o CEI vinculados a la escuela. */
 export const PAYSANDU_SCHOOL_COMENSAL_SECUNDARIA_LABELS: Record<
   PaysanduSchoolComensalSecundaria,
   string
@@ -48,6 +62,34 @@ export const PAYSANDU_SCHOOL_COMENSAL_SECUNDARIA_ORDER: PaysanduSchoolComensalSe
   'cei',
 ];
 
+/** Opciones únicas del desplegable (sin combinaciones). */
+export const COMENSALES_SECUNDARIA_SELECT_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: '—' },
+  { value: 'cbr', label: 'CBR (Ciclo Básico Rural)' },
+  { value: 'liceo', label: 'Liceo' },
+  { value: 'utu', label: 'UTU' },
+  { value: 'cei', label: 'CEI (Centro Educativo Integrado)' },
+];
+
+export const PAYSANDU_SCHOOL_EXPORT_FILTER_LABELS: Record<PaysanduSchoolExportFilter, string> = {
+  todas: 'Todas las escuelas',
+  urbanas: 'Escuelas urbanas',
+  rurales: 'Escuelas rurales',
+  solo_copa_leche: 'Solo copa de leche',
+  doble_copa_leche: 'Doble copa de leche',
+  copa_y_almuerzo: 'Copa de leche y almuerzo',
+  doble_copa_y_almuerzo: 'Doble copa de leche y almuerzo',
+  tiempo_completo: 'Tiempo completo',
+  comun: 'Común (1 turno)',
+  tiempo_extendido: 'Tiempo extendido',
+  agua_mineral: 'Partida por agua mineral',
+  comensales_secundaria: 'Con secundaria (CBR, Liceo, UTU o CEI)',
+  comensales_cbr: 'CBR (Ciclo Básico Rural)',
+  comensales_liceo: 'Secundaria — Liceo',
+  comensales_utu: 'Secundaria — UTU',
+  comensales_cei: 'CEI (Centro Educativo Integrado)',
+};
+
 export function labelArea(area: PaysanduSchoolArea | null | undefined): string {
   if (!area) return '—';
   return PAYSANDU_SCHOOL_AREA_LABELS[area];
@@ -63,6 +105,14 @@ export function labelServicio(servicio: PaysanduSchoolServicio | null | undefine
   return PAYSANDU_SCHOOL_SERVICIO_LABELS[servicio];
 }
 
+export function labelComensalesSecundaria(
+  tipos: PaysanduSchoolComensalSecundaria[] | null | undefined,
+): string {
+  const single = normalizeComensalesSecundaria(tipos);
+  if (!single.length) return '—';
+  return PAYSANDU_SCHOOL_COMENSAL_SECUNDARIA_LABELS[single[0]];
+}
+
 export function normalizeComensalesSecundaria(
   value: unknown,
 ): PaysanduSchoolComensalSecundaria[] {
@@ -76,4 +126,21 @@ export function normalizeComensalesSecundaria(
   );
   const first = PAYSANDU_SCHOOL_COMENSAL_SECUNDARIA_ORDER.find((t) => filtered.includes(t));
   return first ? [first] : [];
+}
+
+/** Valor del select en el listado admin (una sola opción). */
+export function comensalesSecundariaSelectValue(
+  tipos: PaysanduSchoolComensalSecundaria[] | null | undefined,
+): '' | PaysanduSchoolComensalSecundaria {
+  const single = normalizeComensalesSecundaria(tipos);
+  return single[0] ?? '';
+}
+
+export function comensalesSecundariaFromSelect(
+  value: string,
+): PaysanduSchoolComensalSecundaria[] {
+  if (value === 'cbr' || value === 'liceo' || value === 'utu' || value === 'cei') {
+    return [value];
+  }
+  return [];
 }
