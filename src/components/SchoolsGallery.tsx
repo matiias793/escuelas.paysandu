@@ -539,7 +539,7 @@ export default function SchoolsGallery() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-2 pb-6 pt-14 sm:px-4 sm:pb-8 sm:pt-12">
-      <div className="mb-5 pr-20 text-center sm:mb-6 sm:pr-28">
+      <div className="mb-5 text-center sm:mb-6">
         <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary sm:tracking-[0.2em]">
           Departamento de {PAYSANDU_SCHOOL_DEPARTMENT}
         </p>
