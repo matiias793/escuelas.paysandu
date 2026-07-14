@@ -453,7 +453,7 @@ export default function SchoolsGallery() {
         aria-labelledby="gallery-school-detail-title"
       >
         <div
-          className="relative flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-xl"
+          className="relative flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border-[3px] border-[#E5A87A] bg-white shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -466,12 +466,12 @@ export default function SchoolsGallery() {
           </button>
 
           {detailPhotoUrl ? (
-            <div className="relative aspect-[16/10] shrink-0 bg-neutral-100">
+            <div className="relative max-h-[36vh] shrink-0 bg-neutral-100 sm:max-h-[40vh]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={detailPhotoUrl}
                 alt={`Fachada escuela ${detailRow.school_number}`}
-                className="h-full w-full object-cover"
+                className="h-full max-h-[36vh] w-full object-cover sm:max-h-[40vh]"
               />
               <button
                 type="button"
@@ -487,7 +487,7 @@ export default function SchoolsGallery() {
             </div>
           ) : null}
 
-          <div className="border-b border-surface-border px-5 pb-3 pt-5 pr-12">
+          <div className="shrink-0 border-b border-accent/40 px-5 pb-3 pt-4 pr-12">
             <h2 id="gallery-school-detail-title" className="text-lg font-bold text-neutral-800">
               Escuela Nº {detailRow.school_number}
             </h2>
@@ -496,7 +496,7 @@ export default function SchoolsGallery() {
             ) : null}
           </div>
 
-          <div className="space-y-3 overflow-y-auto px-5 py-4">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4">
             {detailSentences.length > 0 ? (
               <ul className="space-y-2.5">
                 {detailSentences.map((sentence) => (
@@ -525,9 +525,9 @@ export default function SchoolsGallery() {
                 href={detailMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-accent-hover hover:underline"
+                className="inline-flex items-center gap-2 break-all text-sm font-semibold text-accent-hover hover:underline"
               >
-                <FaExternalLinkAlt size={12} aria-hidden />
+                <FaExternalLinkAlt size={12} className="shrink-0" aria-hidden />
                 Ver en Google Maps
               </a>
             ) : null}

@@ -7,7 +7,12 @@ export const PAYSANDU_FACADE_BUCKET = 'paysandu-school-facades';
 const MEDIA_SQL_HINT =
   'Ejecutá supabase/paysandu_schools_facade_maps.sql en Supabase → SQL Editor y recargá la página.';
 
+/** Path legible + único para evitar caché del CDN/navegador al reemplazar la foto. */
 function facadeObjectPath(schoolNumber: number): string {
+  return `${schoolNumber}/facade-${Date.now()}.jpg`;
+}
+
+function legacyFacadeObjectPath(schoolNumber: number): string {
   return `${schoolNumber}/facade.jpg`;
 }
 
@@ -15,7 +20,11 @@ export function getPaysanduFacadePublicUrl(path: string | null | undefined): str
   const trimmed = path?.trim();
   if (!trimmed) return null;
   const { data } = supabase.storage.from(PAYSANDU_FACADE_BUCKET).getPublicUrl(trimmed);
-  return data.publicUrl || null;
+  const url = data.publicUrl || null;
+  if (!url) return null;
+  // Cache-bust por si el path se reutiliza (uploads viejos a facade.jpg).
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}v=${encodeURIComponent(trimmed)}`;
 }
 
 export function normalizeGoogleMapsUrl(value: string | null | undefined): string | null {
@@ -92,9 +101,16 @@ export async function adminSetPaysanduSchoolFacadePath(
   return { ok: true, row: normalizeMediaRow(data as PaysanduSchoolRow) };
 }
 
+async function removeStorageObjects(paths: string[]): Promise<void> {
+  const unique = [...new Set(paths.map((p) => p.trim()).filter(Boolean))];
+  if (unique.length === 0) return;
+  await supabase.storage.from(PAYSANDU_FACADE_BUCKET).remove(unique);
+}
+
 export async function uploadPaysanduSchoolFacade(
   schoolNumber: number,
   file: File,
+  previousPath?: string | null,
 ): Promise<{ ok: boolean; error?: string; row?: PaysanduSchoolRow }> {
   try {
     const compressed = await compressImageForUpload(file);
@@ -103,9 +119,9 @@ export async function uploadPaysanduSchoolFacade(
     const { error: uploadError } = await supabase.storage
       .from(PAYSANDU_FACADE_BUCKET)
       .upload(path, compressed, {
-        upsert: true,
+        upsert: false,
         contentType: 'image/jpeg',
-        cacheControl: '3600',
+        cacheControl: '60',
       });
 
     if (uploadError) {
@@ -117,7 +133,20 @@ export async function uploadPaysanduSchoolFacade(
       };
     }
 
-    return adminSetPaysanduSchoolFacadePath(schoolNumber, path);
+    const result = await adminSetPaysanduSchoolFacadePath(schoolNumber, path);
+    if (!result.ok) {
+      await removeStorageObjects([path]);
+      return result;
+    }
+
+    // Quitar la foto anterior (y el path fijo legacy) para no dejar basura ni servir caché vieja.
+    const stale = [
+      previousPath?.trim(),
+      legacyFacadeObjectPath(schoolNumber),
+    ].filter((p): p is string => Boolean(p) && p !== path);
+    await removeStorageObjects(stale);
+
+    return result;
   } catch (err) {
     return {
       ok: false,
@@ -130,16 +159,8 @@ export async function removePaysanduSchoolFacade(
   schoolNumber: number,
   currentPath?: string | null,
 ): Promise<{ ok: boolean; error?: string; row?: PaysanduSchoolRow }> {
-  const path = currentPath?.trim() || facadeObjectPath(schoolNumber);
-
-  const { error: storageError } = await supabase.storage
-    .from(PAYSANDU_FACADE_BUCKET)
-    .remove([path]);
-
-  // Si el objeto no existe, seguimos limpiando la columna
-  if (storageError && !storageError.message.toLowerCase().includes('not found')) {
-    // Continuar igual: la columna es la fuente de verdad en la UI
-  }
+  const path = currentPath?.trim() || legacyFacadeObjectPath(schoolNumber);
+  await removeStorageObjects([path, legacyFacadeObjectPath(schoolNumber)]);
 
   return adminSetPaysanduSchoolFacadePath(schoolNumber, null);
 }

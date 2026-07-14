@@ -252,7 +252,11 @@ function SchoolFacadeMapsFields({
     if (!file) return;
     onUploadingChange(true);
     onError('');
-    const result = await uploadPaysanduSchoolFacade(row.school_number, file);
+    const result = await uploadPaysanduSchoolFacade(
+      row.school_number,
+      file,
+      row.facade_photo_path,
+    );
     onUploadingChange(false);
     if (!result.ok || !result.row) {
       onError(result.error ?? 'No se pudo subir la foto.');

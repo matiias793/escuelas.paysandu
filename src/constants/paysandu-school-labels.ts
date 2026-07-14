@@ -125,21 +125,31 @@ export function buildSchoolDetailSentences(row: {
 }): string[] {
   const sentences: string[] = [];
 
-  if (row.area && row.tipo) {
-    sentences.push(
-      `Es una escuela ${labelArea(row.area).toLowerCase()} de tipo ${labelTipo(row.tipo)}.`,
-    );
-  } else if (row.area) {
-    sentences.push(`Es una escuela ${labelArea(row.area).toLowerCase()}.`);
-  } else if (row.tipo) {
-    sentences.push(`Es una escuela de tipo ${labelTipo(row.tipo)}.`);
+  // Área / modalidad: internado tiene frase propia; el resto solo menciona rural.
+  if (row.tipo === 'internado_rural' || row.servicio_alimentacion === 'internado_4_tiempos') {
+    sentences.push('Es un internado rural.');
+  } else if (row.area === 'rural') {
+    sentences.push('Es una escuela rural.');
   }
 
-  if (row.servicio_alimentacion) {
-    const servicio = labelServicio(row.servicio_alimentacion);
-    const detalle =
-      servicio.charAt(0).toLowerCase() + servicio.slice(1);
-    sentences.push(`Esta escuela brinda servicio de ${detalle}.`);
+  if (row.servicio_alimentacion === 'internado_4_tiempos') {
+    sentences.push(
+      'Esta escuela cuenta con servicio de alimentación en 4 tiempos: desayuno, almuerzo, merienda y cena.',
+    );
+  } else if (row.servicio_alimentacion) {
+    const servicioLabel: Record<
+      Exclude<PaysanduSchoolServicio, 'internado_4_tiempos'>,
+      string
+    > = {
+      solo_copa_leche: 'Copa de leche',
+      doble_copa_leche: 'Doble copa de leche',
+      copa_y_almuerzo: 'Copa de leche y almuerzo',
+      doble_copa_y_almuerzo: 'Doble copa de leche y almuerzo',
+      solo_almuerzo: 'Almuerzo',
+    };
+    sentences.push(
+      `Esta escuela cuenta con servicio de alimentación: ${servicioLabel[row.servicio_alimentacion]}.`,
+    );
   }
 
   if (row.recibe_partida_agua_mineral) {
