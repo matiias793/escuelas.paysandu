@@ -7,6 +7,7 @@ import {
   FaExternalLinkAlt,
   FaSearch,
   FaSearchPlus,
+  FaSyncAlt,
   FaTh,
   FaThLarge,
   FaTimes,
@@ -350,6 +351,7 @@ function gridClassForView(view: GridView): string {
 export default function SchoolsGallery() {
   const [rows, setRows] = useState<PaysanduSchoolRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offlineCached, setOfflineCached] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -381,44 +383,64 @@ export default function SchoolsGallery() {
     }
   };
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setOfflineCached(false);
+  const applyRows = useCallback((data: PaysanduSchoolRow[]) => {
+    setRows(data);
+    setDetailRow((prev) => {
+      if (!prev) return null;
+      return data.find((r) => r.school_number === prev.school_number) ?? null;
+    });
+    setZoomRow((prev) => {
+      if (!prev) return null;
+      return data.find((r) => r.school_number === prev.school_number) ?? null;
+    });
+  }, []);
 
-    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-    if (offline) {
-      const cached = readCachedSchools();
-      if (cached && cached.length > 0) {
-        setRows(cached);
-        setOfflineCached(true);
+  const load = useCallback(
+    async (opts?: { soft?: boolean }) => {
+      const soft = Boolean(opts?.soft);
+      if (soft) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
+      setOfflineCached(false);
+
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (offline) {
+        const cached = readCachedSchools();
+        if (cached && cached.length > 0) {
+          applyRows(cached);
+          setOfflineCached(true);
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
+        if (!soft) setRows([]);
+        setError('Sin conexión y no hay escuelas guardadas en este dispositivo.');
         setLoading(false);
+        setRefreshing(false);
         return;
       }
-      setRows([]);
-      setError('Sin conexión y no hay escuelas guardadas en este dispositivo.');
-      setLoading(false);
-      return;
-    }
 
-    try {
-      const data = await fetchPublicPaysanduSchools();
-      setRows(data);
-      writeCachedSchools(data);
-    } catch (e) {
-      const cached = readCachedSchools();
-      if (cached && cached.length > 0) {
-        setRows(cached);
-        setOfflineCached(true);
-        setError(null);
-      } else {
-        setRows([]);
-        setError(e instanceof Error ? e.message : 'No se pudo cargar la galería.');
+      try {
+        const data = await fetchPublicPaysanduSchools();
+        applyRows(data);
+        writeCachedSchools(data);
+      } catch (e) {
+        const cached = readCachedSchools();
+        if (cached && cached.length > 0) {
+          applyRows(cached);
+          setOfflineCached(true);
+          setError(null);
+        } else {
+          if (!soft) setRows([]);
+          setError(e instanceof Error ? e.message : 'No se pudo cargar la galería.');
+        }
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [applyRows],
+  );
 
   useEffect(() => {
     void load();
@@ -633,6 +655,19 @@ export default function SchoolsGallery() {
           <span className="flex-1 bg-primary" />
           <span className="flex-1 bg-accent" />
         </div>
+        <button
+          type="button"
+          onClick={() => void load({ soft: true })}
+          disabled={loading || refreshing}
+          className="mx-auto mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-primary/30 bg-white px-4 py-2 text-sm font-semibold text-primary-dark shadow-sm touch-manipulation transition-colors hover:bg-primary/10 disabled:opacity-50"
+          aria-label="Actualizar información de las escuelas"
+        >
+          <FaSyncAlt
+            className={`text-primary ${refreshing ? 'animate-spin' : ''}`}
+            aria-hidden
+          />
+          {refreshing ? 'Actualizando…' : 'Actualizar'}
+        </button>
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3">
